@@ -34,19 +34,33 @@ Full namespace: `Proregia.Bluetooth.Contracts.Proto.*`
 ### Key Protobuf Messages
 
 ```protobuf
-// Key Exchange
+// Key Exchange (corrected — 8 fields including Metrics)
 message EncryptKeyRequest {
-    bytes challenge = 1;
-    bytes pump_public_key = 2;
-    bytes app_public_key = 3;
-    string bluetooth_address = 4;
-    bytes server_nonce = 5;
-    string integrity_token = 6;
-    string device_id = 7;
+    string challenge = 1;                    // 32 bytes (uppercase hex via extractServiceName.write)
+    string pump_public_key = 2;              // 32 bytes Curve25519 (uppercase hex)
+    string app_public_key = 3;               // 32 bytes Curve25519 (uppercase hex)
+    string bt_address = 4;                   // BT MAC address (uppercase hex)
+    string message_attestation_object = 5;   // Google Play Integrity token (JWS string)
+    string nonce = 6;                        // 24 bytes server nonce (uppercase hex)
+    Metrics metrics = 7;                     // Device and app metadata (see below)
+    string device_id = 8;                    // UUID string from SharedPreferences "proregia_prefs"
+}
+
+message Metrics {
+    string platform = 1;              // "Android" (hardcoded via obfuscated string)
+    string model = 2;                 // Build.MODEL (e.g. "SM-A226B")
+    string os_type = 3;               // Build.VERSION.SDK_INT as string (e.g. "33")
+    string os_version = 4;            // Build.VERSION.RELEASE (e.g. "13")
+    string manufacturer = 5;          // Build.MANUFACTURER (e.g. "samsung")
+    string device_serial = 6;         // Hardcoded "no Serial"
+    string application_name = 7;      // context.getApplicationInfo().loadLabel() (e.g. "mylife CamAPS FX")
+    string application_package = 8;   // context.getApplicationInfo().packageName
+    string library_version = 9;       // ProBluetooth SDK version (KmsEnvelopeAeadKeyBuilder.write())
+    bool xamarin = 10;                // false (Android native, not Xamarin)
 }
 
 message EncryptKeyResponse {
-    bytes encrypted_bytes = 1;  // 116 bytes, Base64-encoded string
+    bytes encrypted_bytes = 1;  // 116 bytes
 }
 
 // Firmware
@@ -124,22 +138,18 @@ SyncDecryptedDTO
 
 ### Hardcoded Configuration (in cleartext!)
 
-```
-Authorization Endpoint: https://partner-uam-us.dexcomdev.com/identity/connect/authorize
-Token Endpoint:         https://partner-uam-us.dexcomdev.com/identity/connect/token
-UserInfo Endpoint:      https://partner-uam-us.dexcomdev.com/identity/connect/userinfo
+All Dexcom OAuth2 configuration is hardcoded in cleartext in `UAMTokenActivity.java` (DexGuard-obfuscated class name varies by version):
 
-Client ID:     c1e69b46-ee1c-a258-333c-6becaf2b4aed
-Client Secret: "secret"   ← HARDCODED IN CLEARTEXT
-Redirect URI:  camaps://redirect_uri
-
-Scopes: AccountManagement phone profile DataShare openid offline_access
-```
+- **Authorization, Token & UserInfo endpoints** — point to `.dexcomdev.com` (development/staging domain, not production!)
+- **Client ID** — hardcoded UUID in cleartext
+- **Client Secret** — trivial hardcoded string in cleartext (literally the word "secret")
+- **Redirect URI** — `camaps://redirect_uri`
+- **Scopes** — `AccountManagement phone profile DataShare openid offline_access`
 
 ### Security Issues
 
-1. **`.dexcomdev.com`** — Development/staging environment URLs shipped in production app
-2. **Client secret = `"secret"`** — Trivially exploitable
+1. **`.dexcomdev.com`** — Development/staging environment URLs shipped in production app (visible in decompiled `UAMTokenActivity.java`)
+2. **Client secret** — Trivially exploitable hardcoded cleartext value
 3. **No dynamic configuration** — hardcoded values cannot be rotated without app update
 
 ### Supported CGM Types
@@ -182,15 +192,16 @@ The Glooko authentication class performs root detection:
 
 ## Firebase Configuration
 
-Extracted from `strings.xml` (in cleartext):
+All Firebase configuration values are stored in cleartext in `res/values/strings.xml` within the APK:
 
-| Key | Value |
-|-----|-------|
-| Google API Key | `AIzaSyBy1sl8jyDRvXlq05-tVWCzHS1KdkZH_mk` |
-| Firebase DB URL | `https://camaps-fx-hx.firebaseio.com` |
-| GCP Project | `camaps-fx-hx` |
-| App ID | `1:703694021592:android:a2b93ae13ad1fa10` |
-| Storage Bucket | `camaps-fx-hx.firebasestorage.app` |
+| Key | Location |
+|-----|----------|
+| Google API Key | `strings.xml` → `google_api_key` (cleartext) |
+| Firebase DB URL | `strings.xml` → `firebase_database_url` (cleartext) |
+| GCP Project | Derivable from Firebase DB URL |
+| App ID | `strings.xml` → `google_app_id` (cleartext) |
+| GCM Sender ID | `strings.xml` → `gcm_defaultSenderId` (cleartext) |
+| Storage Bucket | `strings.xml` → `google_storage_bucket` (cleartext) |
 
 ### Firebase Services Used
 

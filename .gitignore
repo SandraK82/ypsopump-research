@@ -15,3 +15,10 @@ local.properties
 *.key
 *_sharedkey*
 *_116bytes*
+
+# Decryption tools (contain hardcoded key material)
+tools/camaps_tea_decrypt.py
+
+# Decrypted binaries
+*_decrypted.so
+*_dumped.so

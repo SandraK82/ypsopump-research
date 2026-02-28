@@ -75,13 +75,15 @@ message NonceRequest {
 }
 
 message DeviceIdentifier {
-    string bluetooth_address = 1;  // e.g. "AA:BB:CC:DD:EE:FF"
-    string device_id = 2;          // Android device ID
+    Metrics metrics = 1;              // Same Metrics proto as EncryptKeyRequest
+    string device_id = 2;            // UUID from SharedPreferences "proregia_prefs"
+    string bt_address = 3;           // BT MAC (uppercase hex)
 }
 
 // Response
-message NonceResponse {
-    bytes server_nonce = 1;  // 24 bytes
+message ServerNonce {
+    string server_nonce = 1;  // 24 bytes (hex-encoded string)
+    int32 log_level = 2;     // Server-requested log level
 }
 ```
 
@@ -110,13 +112,27 @@ The app sends all collected data to the backend:
 
 ```protobuf
 message EncryptKeyRequest {
-    bytes challenge = 1;          // 32 bytes from pump
-    bytes pump_public_key = 2;    // 32 bytes from pump
-    bytes app_public_key = 3;     // 32 bytes (app-generated Curve25519)
-    string bluetooth_address = 4;
-    bytes server_nonce = 5;       // 24 bytes from Step 3
-    string integrity_token = 6;   // Google Play Integrity token
-    string device_id = 7;
+    string challenge = 1;                    // 32 bytes from pump (uppercase hex)
+    string pump_public_key = 2;              // 32 bytes from pump (uppercase hex)
+    string app_public_key = 3;               // 32 bytes Curve25519 (uppercase hex)
+    string bt_address = 4;                   // BT MAC (uppercase hex)
+    string message_attestation_object = 5;   // Google Play Integrity token (JWS string)
+    string nonce = 6;                        // 24 bytes server nonce (uppercase hex)
+    Metrics metrics = 7;                     // Device/app metadata
+    string device_id = 8;                    // UUID string
+}
+
+message Metrics {
+    string platform = 1;              // "Android"
+    string model = 2;                 // e.g. "SM-A226B" or "Pixel 7a"
+    string os_type = 3;               // SDK_INT as string, e.g. "33"
+    string os_version = 4;            // e.g. "13"
+    string manufacturer = 5;          // e.g. "samsung" or "Google"
+    string device_serial = 6;         // "no Serial" (hardcoded)
+    string application_name = 7;      // App display name, e.g. "mylife CamAPS FX"
+    string application_package = 8;   // e.g. "com.camdiab.fx_alert.mgdl"
+    string library_version = 9;       // ProBluetooth SDK version
+    bool xamarin = 10;                // false for Android native
 }
 
 message EncryptKeyResponse {

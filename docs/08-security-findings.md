@@ -29,24 +29,14 @@ Similarly, OkHttp REST clients use standard `OkHttpClient.Builder()` without `Ce
 **Severity**: High
 **Impact**: Unauthorised access to Dexcom APIs
 
-```
-Client ID:     c1e69b46-ee1c-a258-333c-6becaf2b4aed
-Client Secret: "secret"
-```
-
-Found in cleartext in `UAMTokenActivity.java`. The client secret is literally the string `"secret"`.
+Both the Client ID (a UUID) and Client Secret are hardcoded in cleartext in `UAMTokenActivity.java` (DexGuard-obfuscated class name varies by version). The client secret is a trivially guessable string — literally the word "secret".
 
 ### 3. Dexcom Development Server URLs in Production
 
 **Severity**: Medium
 **Impact**: Potential data leakage to non-production environment
 
-```
-Authorization: https://partner-uam-us.dexcomdev.com/identity/connect/authorize
-Token:         https://partner-uam-us.dexcomdev.com/identity/connect/token
-```
-
-The `.dexcomdev.com` domain indicates a development/staging environment. Production CamAPS FX is configured to authenticate against Dexcom's dev servers.
+The Authorization and Token endpoints (found in cleartext in `UAMTokenActivity.java`) point to a `.dexcomdev.com` domain — a development/staging environment, not production. Production CamAPS FX is configured to authenticate against Dexcom's dev servers.
 
 ### 4. AES-128-CBC Without Authentication
 
@@ -85,14 +75,7 @@ The **pump does not check key age**. Manipulating `sharedKeyDate` in EncryptedSh
 
 **Severity**: Low (standard for Firebase, but noteworthy)
 
-```xml
-<!-- strings.xml -->
-<string name="google_api_key">AIzaSyBy1sl8jyDRvXlq05-tVWCzHS1KdkZH_mk</string>
-<string name="firebase_database_url">https://camaps-fx-hx.firebaseio.com</string>
-<string name="gcm_defaultSenderId">703694021592</string>
-<string name="google_app_id">1:703694021592:android:a2b93ae13ad1fa10</string>
-<string name="google_storage_bucket">camaps-fx-hx.firebasestorage.app</string>
-```
+All Firebase configuration values (API Key, Database URL, GCM Sender ID, App ID, Storage Bucket) are stored in cleartext in `res/values/strings.xml` within the APK. They can be extracted by any standard APK decompilation tool (e.g., `apktool d`, `jadx`).
 
 ### 7. IV Position Inconsistency
 
@@ -141,6 +124,22 @@ Credit where due — CamAPS FX implements several strong security measures:
 | **Encrypted algorithm** | Closed-loop algorithm encrypted at rest in `liba532a9.so` |
 | **24-byte random nonces** | Safe for random generation (192-bit birthday bound) |
 | **No cleartext traffic** | `usesCleartextTraffic="false"` in manifest |
+
+## Update (2026-02-27): Play Integrity Bypass erfolgreich
+
+**Die Play Integrity-Prüfung kann vollständig umgangen werden.** Mit zwei Magisk-Modulen (TrickyStore v1.4.1 + Integrity Box V31) wird MEETS_STRONG_INTEGRITY erreicht — das höchste Integritätslevel. Der ProRegia Key Exchange und die Pumpenverbindung funktionieren auf einem gerooteten Gerät.
+
+Dieses Ergebnis hat Auswirkungen auf die Sicherheitsbewertung:
+
+| Schutzmaßnahme | Bewertung (aktualisiert) |
+|----------------|--------------------------|
+| **Google Play Integrity** | UMGANGEN — OEM-Keybox-Leak ermöglicht STRONG_INTEGRITY auf gerooteten Geräten |
+| **Native anti-tamper** | IRRELEVANT — Kein Frida nötig, App läuft unmodifiziert |
+| **DexGuard obfuscation** | IRRELEVANT — App wird nicht gepatcht oder gehookt |
+
+Die Schwäche liegt nicht bei CamAPS/Ypsomed, sondern im **Play Integrity Ökosystem selbst**: Geleakte OEM-Keyboxes ermöglichen es gerooteten Geräten, als nicht-gerootet zu erscheinen. Google revoked diese Keyboxes regelmäßig, aber neue tauchen zeitnah auf.
+
+Siehe [13-play-integrity-bypass-success.md](13-play-integrity-bypass-success.md) für die vollständige Dokumentation.
 
 ## Attack Surface Summary
 

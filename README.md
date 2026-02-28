@@ -37,6 +37,15 @@ This repository contains the findings of a comprehensive security and protocol a
 | [08 — Security](docs/08-security-findings.md) | Vulnerabilities, CVEs, attack surface |
 | [09 — Bypass](docs/09-bypass-options.md) | Frida pump faking, key extraction, gRPC MITM |
 | [10 — Legal](docs/10-legal-analysis.md) | EHDS, GDPR, DMCA, right to interoperability |
+| [11 — CamAPS Algorithm](docs/11-camaps-algorithm-analysis.md) | Cambridge Algorithm analysis |
+| [12 — CamAPS Sideload](docs/12-camaps-sideload-bypass.md) | Sideload bypass attempt |
+| [13 — Play Integrity](docs/13-play-integrity-bypass-success.md) | STRONG_INTEGRITY bypass via TrickyStore |
+| [14 — mylife Overview](docs/14-mylife-app-overview.md) | mylife App architecture, Xamarin/.NET stack |
+| [15 — mylife Security](docs/15-mylife-app-security.md) | No root detection, no anti-tamper, no obfuscation |
+| [16 — mylife Protocol](docs/16-mylife-app-proregia-protocol.md) | ProRegia gRPC, Key Exchange, Commander Key |
+| [17 — mylife Components](docs/17-mylife-app-components.md) | Activities, Dexcom SDK, Cloud integration |
+| [18 — mylife Bypass](docs/18-mylife-app-bypass-plan.md) | Bypass-Plan für gerootetes A22 |
+| [19 — Key Lifecycle](docs/19-key-lifecycle-pump-rotation.md) | Pump-seitige Rotation, Counter-Management |
 
 ## Practical Guides
 
